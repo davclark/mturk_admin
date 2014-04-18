@@ -47,20 +47,30 @@ class MyTurkers:
 
         # self.qual = qual
 
+    def search_hits(self, criteria={}, assert_complete=False):
+        '''Get assignments for a given HIT, filtering for matches in `criteria`.
+
+        criteria : dict
+            e.g. {'Title': u'Politics, science, and attitudes.'} will search for
+            all hits where `h.Title` is that exact string.
+        assert_complete : bool
+            Raise an exception if the HIT is not finished.'''
+        # Note - "search"_hits doesn't do any filtering
+        hit_search =self.conn.request('SearchHITs')
+        result = hit_search['SearchHITsResponse']['SearchHITsResult']
+        assert(result['Request']['IsValid'] == 'True',
+            'Problem searching HITs\n' +
+                 json.dumps(result, indent=2))
+
+        hits = [h for h in result['HIT'] if
+                        # All attributes match the values given in the
+                        # criteria dictionary
+                        all(h[key] == value for key, value in criteria.items())]
+
+        self.hits = hits
+        return hits
+
     # def load_assignments(self, criteria={}, assert_complete=False):
-    #     '''Get assignments for a given HIT, filtering for matches in `criteria`.
-
-    #     criteria : dict
-    #         e.g. {'Title': u'Politics, science, and attitudes.'} will search for
-    #         all hits where `h.Title` is that exact string.
-    #     assert_complete : bool
-    #         Raise an exception if the HIT is not finished.'''
-    #     # Note - "search"_hits doesn't do any filtering
-    #     hits = [h for h in self.conn.search_hits() if
-    #                     # All attributes match the values given in the
-    #                     # criteria dictionary
-    #                     all(getattr(h, key) == value for key, value in criteria.items())]
-
     #     # Load all assignments for matching HITs
     #     for h in hits:
     #         if assert_complete:
@@ -81,18 +91,19 @@ class MyTurkers:
         else:
             active_txt = 'Inactive'
 
-        qual = self.conn.request('CreateQualificationType',
+        qual_response = self.conn.request('CreateQualificationType',
                                  {'Name': qual_name,
                                   'Description': qual_description,
                                   'QualificationTypeStatus': active_txt} )
 
         # Check that everything seems OK
-        # if len(qual) != 1:
-        #     warn('expected exactly 1 qualification in create_qual, but got %d' %
-        #          len(qual))
+        qual_data = qual_response['CreateQualificationTypeResponse']['QualificationType']
+        if qual_data['Request']['IsValid'] != 'True':
+            warn('Problem creating %s:\n' % qual_name,
+                 json.dumps(qual_data, indent=2))
 
-        print qual
-        return qual
+        self.qual_data = qual_data
+        return qual_data
 
     # def get_qual(self):
     #     # We need to grab the existing qualification now
