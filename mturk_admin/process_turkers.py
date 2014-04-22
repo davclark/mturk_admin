@@ -1,26 +1,14 @@
-#!/dev/null
-
 ### Don't just run this file! It's set up to run chunks (e.g., by sending to ipython from vim)
 
 '''process_turkers.py - Assign qualifications, send reminders / "bonuses"
 
-NOTE: You need to have your (or our) AWS keys in a ~/.boto file. If you don't
-know how to do this, please ask.
-
-Currently this is using anaconda (which includes boto 2.8.0)
-installed to /opt. It should be fine to change it.
-
-Note that I mostly use unicode below for interacting with AWS, as it's what we
+I should really use unicode below for interacting with AWS, as it's what we
 should be doing for all strings these days (especially when dealing with web
 services). Strings are ALL unicode in Python 3.
 '''
 
-### If you do this again, it should be done with a class that aggregates
-### information from MTurk, and provides makefile like functionality via
-### memoization
-
-# If you end up using this paradigm a lot, it could go in whatever boto config
-# you're using (probably ~/.boto if you're not specifying it as an argument)
+# If you end up using this paradigm a lot, something like this could go in
+# whatever boto config you're using
 # Currently, these are Dav's, and they won't be available from other accounts
 PERSONAL_WORKER_ID = 'A2DLTP7A10KG4T'
 PERSONAL_DAY1_ASSIGNMENT_ID = '2F3MJTUHYW2GZE5TB8J54M16TP7OJQ'
@@ -45,7 +33,7 @@ class MyTurkers:
 
         self.assignments = []
 
-        # self.qual = qual
+        self.qual_data = None
 
     def search_hits(self, criteria={}, assert_complete=False):
         '''Get assignments for a given HIT, filtering for matches in `criteria`.
@@ -54,18 +42,21 @@ class MyTurkers:
             e.g. {'Title': u'Politics, science, and attitudes.'} will search for
             all hits where `h.Title` is that exact string.
         assert_complete : bool
-            Raise an exception if the HIT is not finished.'''
-        # Note - "search"_hits doesn't do any filtering
-        hit_search =self.conn.request('SearchHITs')
-        result = hit_search['SearchHITsResponse']['SearchHITsResult']
-        assert(result['Request']['IsValid'] == 'True',
-            'Problem searching HITs\n' +
-                 json.dumps(result, indent=2))
+            Raise an exception if the HIT is not finished.
+
+        Note - "search" hits doesn't do any filtering. We also need to update
+        this to account for when we have more than one "page" of HITs.'''
+
+        hit_search = self.conn.request('SearchHITs')
+        response = hit_search['SearchHITsResponse']
+        result = response['SearchHITsResult']
+        assert result['Request']['IsValid'] == 'True', \
+            'Problem searching HITs\n' + json.dumps(response, indent=2)
 
         hits = [h for h in result['HIT'] if
-                        # All attributes match the values given in the
-                        # criteria dictionary
-                        all(h[key] == value for key, value in criteria.items())]
+                # All attributes match the values given in the
+                # criteria dictionary
+                all(h[key] == value for key, value in criteria.items())]
 
         self.hits = hits
         return hits
@@ -91,32 +82,64 @@ class MyTurkers:
         else:
             active_txt = 'Inactive'
 
-        qual_response = self.conn.request('CreateQualificationType',
-                                 {'Name': qual_name,
-                                  'Description': qual_description,
-                                  'QualificationTypeStatus': active_txt} )
+        command = 'CreateQualificationType'
+        args = {'Name': qual_name,
+                'Description': qual_description,
+                'QualificationTypeStatus': active_txt}
 
-        # Check that everything seems OK
-        qual_data = qual_response['CreateQualificationTypeResponse']['QualificationType']
+        response = self.conn.request(command, args)[command + 'Response']
+
+        qual_data = response['QualificationType']
         if qual_data['Request']['IsValid'] != 'True':
-            warn('Problem creating %s:\n' % qual_name,
-                 json.dumps(qual_data, indent=2))
+            warn('Problem creating %s:\n' % args['Name'],
+                    json.dumps(response, indent=2))
 
         self.qual_data = qual_data
         return qual_data
 
-    # def get_qual(self):
-    #     # We need to grab the existing qualification now
-    #     qual = self.conn.search_qualification_types(self.qual)
-    #     if len(qual) == 1:
-    #         return qual[0]
-    #     elif len(qual) == 0:
-    #         return self.create_qual()
-    #     else:
-    #         raise 'Found more than 1 qualification for %s' % self.qual
+    def get_qual(self, qual_name):
+        '''Grab an existing qualification '''
+
+        command = 'SearchQualificationTypes'
+        args = {'Query': qual_name}
+        response = self.conn.request(command, args)[command + 'Response']
+        result = response[command + 'Result']
+
+        if result['Request']['IsValid'] != 'True':
+            warn('Problem searching %s:\n' % args['Name'],
+                    json.dumps(response, indent=2))
+
+        num_results = int(result['NumResults'])
+        if num_results == 0:
+            warn('Qualification does not exist!',
+                    json.dumps(response, indent=2) )
+            qual_data = None
+        else:
+            if num_results > 1:
+                # Data will be a LIST of dicts
+                warn('Found more than 1 qualification for %s\n' % args['Query'],
+                    json.dumps(response, indent=2) )
+
+            qual_data =  result['QualificationType']
+
+        self.qual_data = qual_data
+        return qual_data
 
     # def bonus_price(self):
     #     return self.conn.get_price_as_price(0.05)
+
+    def assign_qual(self, workerId, value):
+        qual_id = self.qual_data['QualificationTypeId']
+        command = 'AssignQualification'
+        args = {'QualificationTypeId': self.qual_data['QualificationTypeId'],
+                'WorkerId': workerId,
+                'IntegerValue': unicode(value)}
+        response = self.conn.request(command, args)[command + 'Response']
+        result = response[command + 'Result']
+
+        if result['Request']['IsValid'] != 'True':
+            warn('Problem assigning %s:\n' % args['Name'],
+
 
     # def assign_qual_and_bonus(self, bonus_text, check_day=lambda x: x <=29,
     #                           qual_val=29, assign_qual=True):
