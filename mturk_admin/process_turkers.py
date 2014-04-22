@@ -7,18 +7,12 @@ should be doing for all strings these days (especially when dealing with web
 services). Strings are ALL unicode in Python 3.
 '''
 
-# If you end up using this paradigm a lot, something like this could go in
-# whatever boto config you're using
-# Currently, these are Dav's, and they won't be available from other accounts
-PERSONAL_WORKER_ID = 'A2DLTP7A10KG4T'
-PERSONAL_DAY1_ASSIGNMENT_ID = '2F3MJTUHYW2GZE5TB8J54M16TP7OJQ'
-
 import json
 from warnings import warn
 
 from . import mturk
-# It's unclear I need this - currently just using for to_datetime
-import pandas as pd
+# Don't use this - currently just using for to_datetime in some commented code
+# import pandas as pd
 
 class MyTurkers:
     '''Stuff that needs doing any time we interface with this set of workers'''
@@ -125,11 +119,7 @@ class MyTurkers:
         self.qual_data = qual_data
         return qual_data
 
-    # def bonus_price(self):
-    #     return self.conn.get_price_as_price(0.05)
-
     def assign_qual(self, workerId, value):
-        qual_id = self.qual_data['QualificationTypeId']
         command = 'AssignQualification'
         args = {'QualificationTypeId': self.qual_data['QualificationTypeId'],
                 'WorkerId': workerId,
@@ -139,96 +129,18 @@ class MyTurkers:
 
         if result['Request']['IsValid'] != 'True':
             warn('Problem assigning %s:\n' % args['Name'],
+                 json.dumps(response, indent=2) )
 
+    def grant_bonus(self, workerId, assignmentId, bonus_amt, reason):
+        command = 'GrantBonus'
+        args = {'WorkerId': workerId,
+                'AssignmentId': assignmentId,
+                'BonusAmount.1.Amount': bonus_amt,
+                'BonusAmount.1.CurrencyCode': 'USD',
+                'Reason': reason}
 
-    # def assign_qual_and_bonus(self, bonus_text, check_day=lambda x: x <=29,
-    #                           qual_val=29, assign_qual=True):
-    #     '''Assign the qualification and send a bonus with bonus_text'''
-    #     price = self.bonus_price()
-    #     qual = self.get_qual()
-    #     for i, a in enumerate(self.assignments):
-    #         print i
-    #         day = pd.to_datetime(a.SubmitTime).day
-    #         if check_day(day):
-    #             if assign_qual:
-    #                 resp = self.conn.assign_qualification(qual.QualificationTypeId,
-    #                                                 a.WorkerId, qual_val)
-    #                 assert resp.status, 'Problem with qualification assignment'
-    #             resp = self.conn.grant_bonus(a.WorkerId, a.AssignmentId, price, bonus_text)
-    #             assert resp.status, 'Problem with granting bonus'
+        response = self.conn.request(command, args)[command + 'Response']
+        result = response[command + 'Result']
 
-# if __name__ == '__main__':
-#     mw = MyWorkers()
-# 
-#     ### Initial qualification and bonus
-# 
-#     # Note, included a literal \n to avoid ipython magic on the %s
-#     BONUS_TEXT = '''***
-#     Thanks for completing the first part of our climate change science survey!
-# 
-#     You should now have a "mech_2013_03" qualification to complete the $2
-#     followup (click "Accept HIT" if you're not signed in):\n%s
-# 
-#     It will expire in about a week, so please complete it as soon as you can!
-#     And if you have any trouble, contact me at davclark@berkeley.edu.
-# 
-#     I'll be sending one final reminder via the bonus system on the last day of
-#     the survey. And, if you gave your e-mail, thanks! But, I decided it doesn't
-#     make much sense to send you a message that way too.
-# 
-#     Thanks again,
-#     Dav Clark
-#     ***'''
-# 
-#     ## We run this on on April 2
-# 
-#     april2_url = 'https://www.mturk.com/mturk/preview?groupId=2HGWQIHPCGJ2JRXQ4XWXP0JTUXK17Z'
-# 
-#     # mw.assign_qual_and_bonus(BONUS_TEXT % april2_url)
-# 
-#     ## And this one on April 3
-# 
-#     april3_url = 'https://www.mturk.com/mturk/preview?groupId=25MSIHPCGJ2D8QK5X6OH8JPTXO2284'
-# 
-#     # mw.assign_qual_and_bonus(BONUS_TEXT % april3_url, lambda x: x >= 30, 30)
-# 
-# 
-#     ### Final bonus / reminder
-# 
-#     ## Run mid-day April 7
-# 
-#     FINAL_BONUS_TEXT = '''***
-#     Thanks again for completing the first part of our climate change science survey.
-#     If you haven't already, PLEASE finish the followup portion of the survey as soon
-#     as you can (and if you have, you rock!). It will expire in a little over a day!
-# 
-#     You should have a "mech_2013_03" qualification, and you can complete the $2
-#     followup at this link (click "Accept HIT" if you're not signed in):\n%s
-# 
-#     And if you have any trouble, contact me at davclark@berkeley.edu.
-# 
-#     Thanks again,
-#     Dav Clark
-#     ***'''
-# 
-#     # mw.assign_qual_and_bonus(FINAL_BONUS_TEXT % april2_url, assign_qual=False)
-# 
-#     ## Run mid-day April 9
-# 
-#     FINAL_BONUS_TEXT_2 = '''***
-#     Thanks again for completing the first part of our climate change science survey.
-#     If you haven't already, PLEASE finish the followup portion of the survey as soon
-#     as you can (and if you have, you rock!). It will expire in a little over a day!
-# 
-#     You should have a "mech_2013_03" qualification, and you can complete the $2
-#     followup at this link (click "Accept HIT" if you're not signed in):\n%s
-# 
-#     It should take less than 10 minutes! And if you have any trouble, contact me
-#     at davclark@berkeley.edu.
-# 
-#     Thanks again,
-#     Dav Clark
-#     ***'''
-# 
-#     # mw.assign_qual_and_bonus(FINAL_BONUS_TEXT_2 % april3_url, lambda x: x >= 30, assign_qual=False)
-# 
+        if result['Request']['IsValid'] != 'True':
+            warn('Problem granting bonus:\n', json.dumps(response, indent=2) )
