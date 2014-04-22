@@ -1,0 +1,47 @@
+# All surveys have the same title, so we need to use ID or similar to search
+# through HITs
+# Thus, we'll just download the assignments directly from the MTurk website
+HIT_title: "Science, religion, politics and your attitudes"
+
+qual_name: pretest_abc
+qual_description: 'Completed first survey'
+
+bonus_amt: 0.05
+
+# These are values specific to each group
+qual_value:
+    A: 2
+    B: 3
+    C: 4
+survey_amounts:
+    A: 1.25
+    B: 2.25
+    C: 2.25
+survey_times:
+    A: 10
+    B: 20
+    C: 20
+links:
+    A: "https://www.mturk.com/mturk/preview?groupId=CHANGE"
+    B: "https://www.mturk.com/mturk/preview?groupId=CHANGE"
+    C: "https://www.mturk.com/mturk/preview?groupId=CHANGE"
+
+message: | # This '|' slurps up all following (indented) text
+    ***
+    Thanks for completing the first part of our survey! Based on your answers,
+    I'd like to know more.
+
+    You should now have a ${qual_name} qualification to complete the $$${amount}
+    followup at the link below (you'll need to click "Accept HIT" if you're not
+    signed in). The survey should take about ${time} minutes:
+
+        ${link}
+
+    It will expire in about a week, so please complete it as soon as you can!
+    And if you have any trouble, contact me at YOUR_EMAIL@SOMETHING.COM.
+
+    As before, please don't discuss the survey on the forums!
+
+    Thanks again,
+    YOU
+    ***
