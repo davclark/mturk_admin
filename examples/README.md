@@ -5,18 +5,18 @@ http://www.askdav.com/stories/mturk-survey-experiments.html
 
 But for now, you should be able to put only this in your HIT:
 
-<script type="text/javascript"><!--
-addEventListener('load', function() {
-    // We now have an initial state where visibility is set in CSS
-    var workerId_arg = '&workerId=' + turkGetParam('workerId', '');
+    <script type="text/javascript"><!--
+    addEventListener('load', function() {
+        // We now have an initial state where visibility is set in CSS
+        var workerId_arg = '&workerId=' + turkGetParam('workerId', '');
 
-    // This is for debugging, along with the commented span at the top
-    // $("#workerId").text('Javascript detected worker ID "' + workerId + '"')
-    var link_elt = document.getElementById('surveyLink');
+        // This is for debugging, along with the commented span at the top
+        // $("#workerId").text('Javascript detected worker ID "' + workerId + '"')
+        var link_elt = document.getElementById('surveyLink');
 
-    link_elt.href += workerId_arg;
-});
---></script>
+        link_elt.href += workerId_arg;
+    });
+    --></script>
 
 **Sadly, that doesn't seem to be reliable** - so it's probably best to have a
 backup field in your HIT that asks for workerId (and explain that its for
