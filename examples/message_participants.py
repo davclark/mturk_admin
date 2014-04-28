@@ -46,7 +46,7 @@ def message_and_bonus(credential_file='./mturkconfig.json',
         my_turkers.grant_bonus(row['workerId'], row['assignmentId'],
                                message_info['bonus_amt'], message)
 
-        return True
+    return True
 
 if __name__ == "__main__":
     from sys import argv, exit
