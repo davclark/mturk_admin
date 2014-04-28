@@ -85,8 +85,8 @@ class MyTurkers:
 
         qual_data = response['QualificationType']
         if qual_data['Request']['IsValid'] != 'True':
-            warn('Problem creating %s:\n' % args['Name'],
-                    json.dumps(response, indent=2))
+            warn('Problem creating %s:\n%s' % (qual_name,
+                    json.dumps(response, indent=2) ))
 
         self.qual_data = qual_data
         return qual_data
@@ -100,19 +100,19 @@ class MyTurkers:
         result = response[command + 'Result']
 
         if result['Request']['IsValid'] != 'True':
-            warn('Problem searching %s:\n' % args['Name'],
-                    json.dumps(response, indent=2))
+            warn('Problem searching %s:\n%s' % (qual_name,
+                    json.dumps(response, indent=2) ))
 
         num_results = int(result['NumResults'])
         if num_results == 0:
-            warn('Qualification does not exist!',
+            warn('Qualification does not exist!\n%s' %
                     json.dumps(response, indent=2) )
             qual_data = None
         else:
             if num_results > 1:
                 # Data will be a LIST of dicts
-                warn('Found more than 1 qualification for %s\n' % args['Query'],
-                    json.dumps(response, indent=2) )
+                warn('Found more than 1 qualification for %s\n%s' % (args['Query'],
+                    json.dumps(response, indent=2) ))
 
             qual_data =  result['QualificationType']
 
@@ -128,8 +128,8 @@ class MyTurkers:
         result = response[command + 'Result']
 
         if result['Request']['IsValid'] != 'True':
-            warn('Problem assigning %s:\n' % args['Name'],
-                 json.dumps(response, indent=2) )
+            warn('Problem assigning %s:\n%s' % (value,
+                 json.dumps(response, indent=2) ))
 
     def grant_bonus(self, workerId, assignmentId, bonus_amt, reason):
         command = 'GrantBonus'
@@ -143,4 +143,4 @@ class MyTurkers:
         result = response[command + 'Result']
 
         if result['Request']['IsValid'] != 'True':
-            warn('Problem granting bonus:\n', json.dumps(response, indent=2) )
+            warn('Problem granting bonus:\n%s' % json.dumps(response, indent=2) )
