@@ -22,4 +22,5 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 setup(name = 'mturk_admin',
-      version = find_version('mturk_admin', '__init__.py') )
+      version = find_version('mturk_admin', '__init__.py'),
+      install_requires = ['requests', 'xmltodict'] )
